@@ -14,6 +14,7 @@ require '../src/models/ClientDetailCategoryModel.php';
 require '../src/models/ClientDetailSubCategoryModel.php';
 require '../src/models/DetailedJobDescriptionModel.php';
 require '../src/models/RequiredSkillsModel.php';
+require '../src/models/PopularServicesModel.php';
 
 $app = new \Slim\App;
 

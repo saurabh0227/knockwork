@@ -9,7 +9,8 @@ class DetailedJobDescriptionModel {
            $jd_budget,
            $job_type,
            $jd_descriptions,
-           $required_skills;
+           $required_skills,
+           $client_detail;
 
     /**
      * Get the value of jd_id
@@ -187,6 +188,26 @@ class DetailedJobDescriptionModel {
            public function setRequired_skills($required_skills)
            {
                       $this->required_skills = $required_skills;
+
+                      return $this;
+           }
+
+           /**
+            * Get the value of client_detail
+            */ 
+           public function getClient_detail()
+           {
+                      return $this->client_detail;
+           }
+
+           /**
+            * Set the value of client_detail
+            *
+            * @return  self
+            */ 
+           public function setClient_detail($client_detail)
+           {
+                      $this->client_detail = $client_detail;
 
                       return $this;
            }

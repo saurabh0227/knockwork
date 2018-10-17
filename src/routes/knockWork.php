@@ -40,14 +40,16 @@ $app->get('/api/categories', function(Request $request, Response $response) {
             $categoryModel->setCategories_title($category->categories_title);
             $categoryModel->setCategories_image_url($category->categories_icon_url);
             $categoryModel->setCategories_description($category->categories_description);
-
-            //$id = $category->ps_id;
-            $sqlPopularityStatus = "SELECT ps_title FROM popular_services
-                                   join categories on popular_services.ps_id = categories.ps_id
-                                   where categories.categories_id =".$categoryModel->getCategories_id();
-            $stmtPopularityStatus = $db->query($sqlPopularityStatus);
-            $popularityStatus = $stmtPopularityStatus->fetch(PDO::FETCH_OBJ);
-            $categoryModel->setPopularity_status($popularityStatus->ps_title);
+        
+            // //$id = $category->ps_id;
+            // $sqlPopularityStatus = "SELECT ps_title
+            //                         FROM popular_services
+            //                         JOIN categories ON popular_services.ps_id = categories.ps_id
+            //                         WHERE categories.categories_id =".$categoryModel->getCategories_id();
+            // $stmtPopularityStatus = $db->query($sqlPopularityStatus);
+            // $popularityStatus = $stmtPopularityStatus->fetch(PDO::FETCH_OBJ);
+            // $categoryModel->setPopularity_status($popularityStatus->ps_title);
+        
 
             array_push($result,$categoryModel);
         }
@@ -60,6 +62,42 @@ $app->get('/api/categories', function(Request $request, Response $response) {
         echo '{"error": '.$err->getMessage().'}';
     }
 });
+
+// Get All Popular Services
+$app->get('/api/popularservices',function(Request $request, Response $response) {
+    $result = array();
+    $sql = "SELECT categories.categories_id,
+                   categories.categories_title,
+                   categories.categories_icon_url
+            FROM categories
+            WHERE categories.ps_id = 1 limit 10";
+    try {
+        //Get DB
+        $db = new db();
+        //Connect
+        $db = $db->connect();
+
+        $stmt = $db->query($sql);
+        $popularServices = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+        foreach($popularServices as $popularService) {
+            $popularServicesModel = new PopularServicesModel();
+            $popularServicesModel->setId($popularService->categories_id);
+            $popularServicesModel->setTitle($popularService->categories_title);
+            $popularServicesModel->setImage_url($popularService->categories_icon_url);
+
+            array_push($result,$popularServicesModel);
+        }
+
+        $db = null;
+
+        echo json_encode($result);
+
+    }  catch (PDOException $e) {
+        echo '{"error": '.$err->getMessage().'}';
+    }
+});
+
 
 // Detailed Job Description
 $app->get('/api/jobdescriptions/lancer/detailed/{jd_id}', function(Request $request, Response $response) {
@@ -89,7 +127,9 @@ $app->get('/api/jobdescriptions/lancer/detailed/{jd_id}', function(Request $requ
             $detailedJobDescriptionModel->setJd_updated_at($detailedDescription->jd_updated_at);
 
             // Quotes Count
-            $sqlQuotes = "SELECT COUNT(q_id) AS COUNT FROM quotes WHERE jd_id=".$detailedJobDescriptionModel->getJd_id();
+            $sqlQuotes = "SELECT COUNT(q_id) AS COUNT 
+                          FROM quotes 
+                          WHERE jd_id=".$detailedJobDescriptionModel->getJd_id();
             $stmtQuotes = $db->query($sqlQuotes);
             $quotesCount = $stmtQuotes->fetch(PDO::FETCH_OBJ); 
             $detailedJobDescriptionModel->setQuotes($quotesCount->COUNT);
@@ -98,10 +138,11 @@ $app->get('/api/jobdescriptions/lancer/detailed/{jd_id}', function(Request $requ
             $detailedJobDescriptionModel->setJd_budget($detailedDescription->jd_budget);
 
             //Job Type
-            $sqlJobType = "SELECT jt_title FROM job_types
-                           join job_descriptions 
-                           on job_types.jt_id = job_descriptions.jt_id
-                           where job_descriptions.jd_id = $jd_id";
+            $sqlJobType = "SELECT jt_title 
+                           FROM job_types
+                           JOIN job_descriptions 
+                           ON job_types.jt_id = job_descriptions.jt_id
+                           WHERE job_descriptions.jd_id = $jd_id";
             $stmtJobType = $db->query($sqlJobType);
             $jobType = $stmtJobType->fetch(PDO::FETCH_OBJ);
             $detailedJobDescriptionModel->setJob_type($jobType->jt_title);
@@ -111,9 +152,9 @@ $app->get('/api/jobdescriptions/lancer/detailed/{jd_id}', function(Request $requ
             //Required skills
             $sqlRequirdSkills = "SELECT sub_categories.sc_title
                                  FROM required_skills
-                                 join sub_categories on required_skills.sc_id = sub_categories.sc_id
-                                 join job_descriptions on required_skills.jd_id = job_descriptions.jd_id
-                                 where job_descriptions.jd_id = $jd_id";
+                                 JOIN sub_categories on required_skills.sc_id = sub_categories.sc_id
+                                 JOIN job_descriptions on required_skills.jd_id = job_descriptions.jd_id
+                                 WHERE job_descriptions.jd_id = $jd_id";
             $stmtRequiredSkills = $db->query($sqlRequirdSkills);
             $requiredSkills = $stmtRequiredSkills->fetchAll(PDO::FETCH_OBJ);
             $arrRequiredSkills = array();
@@ -125,6 +166,29 @@ $app->get('/api/jobdescriptions/lancer/detailed/{jd_id}', function(Request $requ
             }
 
             $detailedJobDescriptionModel->setRequired_skills($arrRequiredSkills);
+
+            // Client Details
+
+            $clientLancerModel = new ClientLancerModel();
+            $sqlClientDetails = "SELECT user_registrations.ur_first_name,
+                                        user_registrations.ur_last_name,
+                                        address.country,
+                                sum(spend.spend) AS SPEND
+                                FROM job_descriptions
+                                JOIN clients ON job_descriptions.c_id = clients.c_id
+                                JOIN user_registrations ON clients.ur_id = user_registrations.ur_id
+                                JOIN address ON user_registrations.address_id = address.address_id
+                                JOIN spend ON clients.c_id = spend.c_id
+                                WHERE job_descriptions.jd_id = $jd_id";
+            $stmtClientDetail = $db->query($sqlClientDetails);
+            $clientDetail = $stmtClientDetail->fetch(PDO::FETCH_OBJ);
+
+            $clientLancerModel->setFirst_name($clientDetail->ur_first_name);
+            $clientLancerModel->setLast_name($clientDetail->ur_last_name);
+            $clientLancerModel->setCountry($clientDetail->country);
+            $clientLancerModel->setTotal_spend($clientDetail->SPEND);
+            
+            $detailedJobDescriptionModel->setClient_detail($clientLancerModel);
 
             array_push($result, $detailedJobDescriptionModel);
         }
@@ -138,19 +202,19 @@ $app->get('/api/jobdescriptions/lancer/detailed/{jd_id}', function(Request $requ
     }
 });
 
-// Get One Job Description
+// Get One Job Description with complete detail
 $app->get('/api/jobdescriptions/{jd_id}', function(Request $request, Response $response) {
     $jd_id = $request->getAttribute('jd_id');
     $result = array();
     $sqlDescription = "SELECT jd_id,
-                   jd_title,
-                   jd_description,
-                   jd_created_at,
-                   jd_updated_at,
-                   jd_duration,
-                   jd_budget
-            FROM job_descriptions
-            WHERE jd_id = $jd_id";
+                              jd_title,
+                              jd_description,
+                              jd_created_at,
+                              jd_updated_at,
+                              jd_duration,
+                              jd_budget
+                        FROM job_descriptions
+                        WHERE jd_id = $jd_id";
     try {
         // Get DB
         $db = new db();
@@ -171,16 +235,18 @@ $app->get('/api/jobdescriptions/{jd_id}', function(Request $request, Response $r
             $jobDescriptionModel->setJd_budget($description->jd_budget);
 
             //JOb Type
-            $sqlJobType = "SELECT jt_title FROM job_types
-                             join job_descriptions 
-                             on job_types.jt_id = job_descriptions.jt_id
-                             where job_descriptions.jd_id = $jd_id";
+            $sqlJobType = "SELECT jt_title 
+                           FROM job_types
+                           JOIN job_descriptions ON job_types.jt_id = job_descriptions.jt_id
+                           WHERE job_descriptions.jd_id = $jd_id";
             $stmtJobType = $db->query($sqlJobType);
             $jobType = $stmtJobType->fetch(PDO::FETCH_OBJ);
             $jobDescriptionModel->setJob_type($jobType->jt_title);
 
             //Number of quotes
-            $sqlQuotes = "SELECT COUNT(q_id) AS COUNT FROM quotes WHERE jd_id=".$jobDescriptionModel->getJd_id();
+            $sqlQuotes = "SELECT COUNT(q_id) AS COUNT 
+                          FROM quotes
+                          WHERE jd_id=".$jobDescriptionModel->getJd_id();
             $stmtQuotes = $db->query($sqlQuotes);
             $quotesCount = $stmtQuotes->fetch(PDO::FETCH_OBJ); 
             $jobDescriptionModel->setQuotes_count($quotesCount->COUNT);
@@ -191,13 +257,13 @@ $app->get('/api/jobdescriptions/{jd_id}', function(Request $request, Response $r
 	                                    user_registrations.ur_id, user_registrations.ur_first_name, user_registrations.ur_last_name,
                                         user_registrations.ur_image_url,
                                         address.address_id, address.country,
-                                sum(spend.spend) as SPEND
-                                from job_descriptions
-                                join clients on job_descriptions.c_id = clients.c_id
-                                join user_registrations on clients.ur_id = user_registrations.ur_id
-                                join address on user_registrations.address_id = address.address_id
-                                join spend on clients.c_id = spend.c_id
-                                where job_descriptions.jd_id  = $jd_id";
+                                 sum(spend.spend) AS SPEND
+                                 FROM job_descriptions
+                                 JOIN clients ON job_descriptions.c_id = clients.c_id
+                                 JOIN user_registrations ON clients.ur_id = user_registrations.ur_id
+                                 JOIN address ON user_registrations.address_id = address.address_id
+                                 JOIN spend ON clients.c_id = spend.c_id
+                                 WHERE job_descriptions.jd_id  = $jd_id";
 
             $stmtClientDetails = $db->query($sqlClientDetails);
             $clientDetail = $stmtClientDetails->fetch(PDO::FETCH_OBJ);
@@ -218,9 +284,9 @@ $app->get('/api/jobdescriptions/{jd_id}', function(Request $request, Response $r
                                                categories.categories_icon_url,
                                                categories.categories_description
                                         FROM required_skills
-                                        join categories on required_skills.categories_id = categories.categories_id
-                                        join job_descriptions on required_skills.jd_id = job_descriptions.jd_id
-                                        where job_descriptions.jd_id = $jd_id";
+                                        JOIN categories ON required_skills.categories_id = categories.categories_id
+                                        JOIN job_descriptions ON required_skills.jd_id = job_descriptions.jd_id
+                                        WHERE job_descriptions.jd_id = $jd_id";
             $stmtClientDetailCategory = $db->query($sqlClientDetailCategory);
             $clientDetailCategories = $stmtClientDetailCategory->fetchAll(PDO::FETCH_OBJ);
             $arrCategory = array();
@@ -240,9 +306,9 @@ $app->get('/api/jobdescriptions/{jd_id}', function(Request $request, Response $r
                                       sub_categories.sc_title,
                                       sub_categories.sc_icon_url
                                 FROM required_skills
-                                join sub_categories on required_skills.sc_id = sub_categories.sc_id
-                                join job_descriptions on required_skills.jd_id = job_descriptions.jd_id
-                                where job_descriptions.jd_id = $jd_id";
+                                JOIN sub_categories ON required_skills.sc_id = sub_categories.sc_id
+                                JOIN job_descriptions ON required_skills.jd_id = job_descriptions.jd_id
+                                WHERE job_descriptions.jd_id = $jd_id";
             $stmtSubCategory = $db->query($sqlSubCategory);
             $subCategories = $stmtSubCategory->fetchAll(PDO::FETCH_OBJ);
             $arrSubCategories = array();
@@ -276,14 +342,16 @@ $app->get('/api/jobdescriptions/lancer/page/{page_no}', function(Request $reques
     $list = array();
     $n = ($page_no-1)*10;
 
-    $sqlCount = "SELECT count(jd_id) as Count FROM job_descriptions";
+    $sqlCount = "SELECT count(jd_id) as Count
+                 FROM job_descriptions";
 
     $sql = "SELECT jd_id,
                    c_id,
                    jd_title,
                    jd_budget,
                    jd_description,
-                   jd_updated_at FROM job_descriptions ORDER BY jd_updated_at DESC LIMIT $n,10 ";
+                   jd_updated_at
+            FROM job_descriptions ORDER BY jd_updated_at DESC LIMIT $n,10 ";
 
     try {
         // Get DB Object
@@ -314,12 +382,14 @@ $app->get('/api/jobdescriptions/lancer/page/{page_no}', function(Request $reques
             $priceType = $stmtPriceType->fetch(PDO::FETCH_OBJ);
             $jdModel->setJd_price_type($priceType->pt_title);
 
-            $jdModel->setJd_price($jdp->jd_budget);
+            $jdModel->setJd_budget($jdp->jd_budget);
             $jdModel->setJd_description($jdp->jd_description);
             $jdModel->setJd_updated_at($jdp->jd_updated_at);  
             
             // Number of Quotes
-            $sqlQuotes = "SELECT COUNT(q_id) AS COUNT FROM quotes WHERE jd_id=".$jdModel->getJd_id();
+            $sqlQuotes = "SELECT COUNT(q_id) AS COUNT 
+                          FROM quotes
+                          WHERE jd_id=".$jdModel->getJd_id();
             $stmtQuotes = $db->query($sqlQuotes);
             $quotesCount = $stmtQuotes->fetch(PDO::FETCH_OBJ);         
             $jdModel->setJd_quotes($quotesCount->COUNT);
@@ -329,24 +399,24 @@ $app->get('/api/jobdescriptions/lancer/page/{page_no}', function(Request $reques
                 $clientModel = new ClientLancerModel();
             
                 $sqlClient = "SELECT clients.c_id,
-                                user_registrations.ur_first_name,
-                                user_registrations.ur_last_name,
-                                address.country,
-                                sum(spend.spend) as Spend
-                                FROM (job_descriptions join clients 
-                                on job_descriptions.c_id=clients.c_id join user_registrations 
-                                on clients.ur_id=user_registrations.ur_id join address
-                                on user_registrations.address_id=address.address_id join spend
-                                on clients.c_id=spend.c_id)  
-                                where clients.c_id = ".$jdp->c_id;
+                                     user_registrations.ur_first_name,
+                                     user_registrations.ur_last_name,
+                                     address.country,
+                              sum(spend.spend) AS Spend
+                              FROM (job_descriptions
+                              JOIN clients ON job_descriptions.c_id=clients.c_id
+                              JOIN user_registrations ON clients.ur_id=user_registrations.ur_id
+                              JOIN address ON user_registrations.address_id=address.address_id 
+                              JOIN spend ON clients.c_id=spend.c_id)  
+                              WHERE clients.c_id = ".$jdp->c_id;
 
                 $stmtClient = $db->query($sqlClient);
                 $clientData = $stmtClient->fetch(PDO::FETCH_OBJ);
                 
                 $sqlFeedback="SELECT (count(distinct client_feedbacks.jd_id)/count(distinct job_descriptions.jd_id))*100 
-                                        as client_feedback 
-                                        FROM client_feedbacks, job_descriptions 
-                                        where client_feedbacks.c_id = ".$jdp->c_id." and job_descriptions.c_id = ".$jdp->c_id;
+                              AS client_feedback 
+                              FROM client_feedbacks, job_descriptions 
+                              WHERE client_feedbacks.c_id = ".$jdp->c_id." and job_descriptions.c_id = ".$jdp->c_id;
 
 
 
@@ -444,15 +514,15 @@ $app->put('/api/userregistration/update/{ur_id}', function(Request $request, Res
     $ur_status_free_lancer = $request->getParam('ur_status_free_lancer');
     $ur_status_client = $request->getParam('ur_status_client');
 
-    $sql = "UPDATE user_registrations SET
-            ur_firebase_id = :ur_firebase_id,
-            ur_first_name = :ur_first_name,
-            ur_last_name = :ur_last_name,
-            ur_email = :ur_email,
-            ur_phone_no = :ur_phone_no,
-            ur_image_url = :ur_image_url,
-            ur_status_free_lancer = :ur_status_free_lancer,
-            ur_status_client = :ur_status_client
+    $sql = "UPDATE user_registrations 
+            SET ur_firebase_id = :ur_firebase_id,
+                ur_first_name = :ur_first_name,
+                ur_last_name = :ur_last_name,
+                ur_email = :ur_email,
+                ur_phone_no = :ur_phone_no,
+                ur_image_url = :ur_image_url,
+                ur_status_free_lancer = :ur_status_free_lancer,
+                ur_status_client = :ur_status_client
             WHERE ur_id = $id";
     try {
         //Get DB Object

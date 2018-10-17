@@ -4,8 +4,9 @@
         public $categories_id,
                $categories_title,
                $categories_image_url,
-               $categories_description,
-               $popularity_status;
+               $categories_description
+               //$popularity_status
+               ;
 
         /**
          * Get the value of categories_id

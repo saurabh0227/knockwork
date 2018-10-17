@@ -5,7 +5,7 @@ class JobDescriptionLancerModel {
     public $jd_id,
            $jd_title,
            $jd_price_type,
-           $jd_price,
+           $jd_budget,
            $jd_description,
            $jd_updated_at,
            $jd_quotes,
@@ -47,26 +47,6 @@ class JobDescriptionLancerModel {
            public function setJd_title($jd_title)
            {
                       $this->jd_title = $jd_title;
-
-                      return $this;
-           }
-
-           /**
-            * Get the value of jd_price
-            */ 
-           public function getJd_price()
-           {
-                      return $this->jd_price;
-           }
-
-           /**
-            * Set the value of jd_price
-            *
-            * @return  self
-            */ 
-           public function setJd_price($jd_price)
-           {
-                      $this->jd_price = $jd_price;
 
                       return $this;
            }
@@ -167,6 +147,26 @@ class JobDescriptionLancerModel {
            public function setJd_price_type($jd_price_type)
            {
                       $this->jd_price_type = $jd_price_type;
+
+                      return $this;
+           }
+
+           /**
+            * Get the value of jd_budget
+            */ 
+           public function getJd_budget()
+           {
+                      return $this->jd_budget;
+           }
+
+           /**
+            * Set the value of jd_budget
+            *
+            * @return  self
+            */ 
+           public function setJd_budget($jd_budget)
+           {
+                      $this->jd_budget = $jd_budget;
 
                       return $this;
            }
