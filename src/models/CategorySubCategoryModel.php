@@ -1,7 +1,7 @@
 <?php
 
 class CategorySubCategoryModel {
-    public $id,
+    public //$id,
            $title
            //$sub_category_id,
            //$sub_category_title
