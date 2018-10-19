@@ -1016,7 +1016,7 @@ $app->get('/api/suggestionlist', function (Request $request, Response $response)
 /* ----------------------------------------------------------------------------------------------------------------- */
 //Search lancers basis on categories and subCategories
 $app->post('/api/lancersearch/{page_no}',function (Request $request, Response $response) {
-   
+    //$arr = array();
     $title = $request->getParam('title');
     $result = array();
     $result["error"] = FALSE;
@@ -1045,7 +1045,8 @@ $app->post('/api/lancersearch/{page_no}',function (Request $request, Response $r
             JOIN search_lancer ON free_lancers.f_id = search_lancer.f_id
             JOIN categories ON search_lancer.categories_id = categories.categories_id
             JOIN sub_categories ON search_lancer.sc_id = sub_categories.sc_id
-            WHERE categories.categories_title LIKE '$title%' OR sub_categories.sc_title LIKE '$title%'";
+            WHERE categories.categories_title LIKE '$title%' OR sub_categories.sc_title LIKE '$title%'
+            LIMIT $n,10";
     try {
         //Get DB
         $db = new db();
@@ -1058,12 +1059,13 @@ $app->post('/api/lancersearch/{page_no}',function (Request $request, Response $r
         $pageModel->setPage($page_no);
         $pageModel->setCount($page_no*10);
         $pageModel->setTotal_count($count->COUNT);
+        
 
         $stmt = $db->query($sql);
         $lancers = $stmt->fetchAll(PDO::FETCH_OBJ);
         
         if($lancers!=null){
-                        foreach($lancers as $lancer) {
+            foreach($lancers as $lancer) {
                 $lsm = new LancerSearchModel();
                 $lsm->setF_id($lancer->f_id);
                 $lsm->setUr_id($lancer->ur_id);
@@ -1082,7 +1084,8 @@ $app->post('/api/lancersearch/{page_no}',function (Request $request, Response $r
                 $stmtEarned = $db->query($sqlEarned);
                 $earn = $stmtEarned->fetch(PDO::FETCH_OBJ);
                 $lsm->setEarning($earn->EARN);
-            array_push($result["result"],$lsm);
+
+            array_push($result["result"], $lsm);
             }
         }else
         {
@@ -1091,7 +1094,10 @@ $app->post('/api/lancersearch/{page_no}',function (Request $request, Response $r
         }
         $pageModel->setList($result["result"]);
         $db = null;
-        echo json_encode($pageModel);
+        $data=new DataModel();
+        $data->SetData($pageModel);
+        echo json_encode($data);
+        //echo json_encode($arr);
 
     } catch (PDOException $e) {
         echo '{"error": '.$err->getMessage().'}';
