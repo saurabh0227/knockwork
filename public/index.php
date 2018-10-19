@@ -20,7 +20,7 @@ require '../src/models/SubCategoriesModel.php';
 require '../src/models/ClientLancerSearchModel.php';
 require '../src/models/CategorySubCategoryModel.php';
 require '../src/models/LancerSearchModel.php';
-
+require '../src/models/DataModel.php';
 $app = new \Slim\App;
 
 // $app->get('/hello/{name}', function (Request $request, Response $response, array $args) {
