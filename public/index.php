@@ -1,4 +1,5 @@
 <?php
+
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
@@ -15,25 +16,23 @@ require '../src/models/ClientDetailSubCategoryModel.php';
 require '../src/models/DetailedJobDescriptionModel.php';
 require '../src/models/RequiredSkillsModel.php';
 require '../src/models/PopularServicesModel.php';
+require '../src/models/SubCategoriesModel.php';
+require '../src/models/ClientLancerSearchModel.php';
+require '../src/models/CategorySubCategoryModel.php';
+require '../src/models/LancerSearchModel.php';
 
 $app = new \Slim\App;
 
-// $checkProxyHeaders = true;
-// $trustedProxies = ['192.168.0.1', '192.168.0.2'];
+// $app->get('/hello/{name}', function (Request $request, Response $response, array $args) {
 
-// $app->add(new RKA\Middleware\IpAddress($checkProxyHeaders, $trustedProxies));
+//     $name = $args['name'];
+//     $response->getBody()->write("Hello, $name");
 
-$app->get('/hello/{name}', function (Request $request, Response $response, array $args) {
-
-    //$ipAddress = $request->getAttribute('ip_address');
-
-
-    $name = $args['name'];
-    $response->getBody()->write("Hello, $name");
-
-    return $response;
-});
+//     return $response;
+// });
 
 require '../src/routes/knockWork.php';
 
 $app->run();
+
+?>

@@ -1,7 +1,7 @@
 <?php
 
 class PageLancerModel{
-    public $page,$count,$total_count,$job_list;
+    public $page,$count,$total_count,$list;
     
 
     /**
@@ -64,22 +64,23 @@ class PageLancerModel{
         return $this;
     }
 
+
     /**
-     * Get the value of job_list
+     * Get the value of list
      */ 
-    public function getJob_list()
+    public function getList()
     {
-        return $this->job_list;
+        return $this->list;
     }
 
     /**
-     * Set the value of job_list
+     * Set the value of list
      *
      * @return  self
      */ 
-    public function setJob_list($job_list)
+    public function setList($list)
     {
-        $this->job_list = $job_list;
+        $this->list = $list;
 
         return $this;
     }

@@ -16,6 +16,7 @@ $app->add(function ($req, $res, $next) {
             ->withHeader('content-type','application/json');
 });
 
+/* ----------------------------------------------------------------------------------------------------------------- */
 // Get All Categories
 $app->get('/api/categories', function(Request $request, Response $response) {
     $result = array();
@@ -41,16 +42,6 @@ $app->get('/api/categories', function(Request $request, Response $response) {
             $categoryModel->setCategories_image_url($category->categories_icon_url);
             $categoryModel->setCategories_description($category->categories_description);
         
-            // //$id = $category->ps_id;
-            // $sqlPopularityStatus = "SELECT ps_title
-            //                         FROM popular_services
-            //                         JOIN categories ON popular_services.ps_id = categories.ps_id
-            //                         WHERE categories.categories_id =".$categoryModel->getCategories_id();
-            // $stmtPopularityStatus = $db->query($sqlPopularityStatus);
-            // $popularityStatus = $stmtPopularityStatus->fetch(PDO::FETCH_OBJ);
-            // $categoryModel->setPopularity_status($popularityStatus->ps_title);
-        
-
             array_push($result,$categoryModel);
         }
 
@@ -62,7 +53,100 @@ $app->get('/api/categories', function(Request $request, Response $response) {
         echo '{"error": '.$err->getMessage().'}';
     }
 });
+/* ----------------------------------------------------------------------------------------------------------------- */
 
+/* ----------------------------------------------------------------------------------------------------------------- */
+//Add Category
+$app->post('/api/category/add', function(Request $request, Response $response) {
+    $categories_title = $request->getParam('categories_title');
+    $categoies_icon_url = $request->getParam('categoies_icon_url');
+    $categoies_description = $request->getParam('categoies_description');
+
+    $sql = "INSERT INTO categories (categories_title,
+                                    categoies_icon_url,
+                                    categoies_description)
+                            VALUES (:categories_title,
+                                    :categoies_icon_url,
+                                    :categoies_description)";
+    try {
+        //Get DB Object
+        $db = new db();
+        //Connect
+        $db = $db->connect();
+
+        $stmt = $db->prepare($sql);
+
+        $stmt->bindParam(':categories_title', $categories_title);
+        $stmt->bindParam(':categoies_icon_url', $categoies_icon_url);
+        $stmt->bindParam(':categoies_description', $categoies_description);
+
+        $stmt->execute();
+
+        echo '{"notice": {"text": "Added SuccessFully"}';
+    } catch(PDOException $e){
+        echo '{"error": '.$err->getMessage().'}';
+    }
+});
+/* ----------------------------------------------------------------------------------------------------------------- */
+
+/* ----------------------------------------------------------------------------------------------------------------- */
+//Update Category
+$app->put('/api/category/update/{categories_id}', function(Request $request, Response $response) {
+    $id = $request->getAttribute('categories_id');
+    $categories_title = $request->getParam('categories_title');
+    $categoies_icon_url = $request->getParam('categoies_icon_url');
+    $categoies_description = $request->getParam('categoies_description');
+
+    $sql = "UPDATE categories
+            SET categories_title = :categories_title,
+                categoies_icon_url = :categoies_icon_url,
+                categoies_description = :categoies_description
+            WHERE categories_id = $id";
+    try {
+        //Get DB Object
+        $db = new db();
+        //Connect
+        $db = $db->connect();
+
+        $stmt = $db->prepare($sql);
+
+        $stmt->bindParam(':categories_title', $categories_title);
+        $stmt->bindParam(':categoies_icon_url', $categoies_icon_url);
+        $stmt->bindParam(':categoies_description', $categoies_description);
+
+        $stmt->execute();
+
+        echo '{"notice": {"text": "SuccessFully Updated"}';
+    } catch(PDOException $e){
+        echo '{"error": '.$err->getMessage().'}';
+    }
+});
+/* ----------------------------------------------------------------------------------------------------------------- */
+
+/* ----------------------------------------------------------------------------------------------------------------- */
+//Delete Category
+$app->delete('/api/category/delete/{categories_id}', function(Request $request, Response $response) {
+    $id = $request->getAttribute('categories_id');
+
+    $sql = "DELETE FROM categories WHERE categories_id = $id";
+
+    try {
+        // Get DB Object
+        $db = new db();
+        // Connect
+        $db = $db->connect();
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute();
+        $db = null;
+        echo '{"notice": {"text": "SuccessFully Deleted"}';
+    } catch(PDOException $e){
+        echo '{"error": '.$err->getMessage().'}';
+    }
+});
+/* ----------------------------------------------------------------------------------------------------------------- */
+
+/* ----------------------------------------------------------------------------------------------------------------- */
 // Get All Popular Services
 $app->get('/api/popularservices',function(Request $request, Response $response) {
     $result = array();
@@ -97,8 +181,168 @@ $app->get('/api/popularservices',function(Request $request, Response $response) 
         echo '{"error": '.$err->getMessage().'}';
     }
 });
+/* ----------------------------------------------------------------------------------------------------------------- */
 
+/* ----------------------------------------------------------------------------------------------------------------- */
+// Get all subCategories
+$app->get('/api/subcategories', function(Request $request, Response $response) {
+    $result = array();
+    $sql = "SELECT sc_id,
+                   sc_title,
+                   sc_icon_url
+            FROM sub_categories";
+    try {
+         //Get DB
+         $db = new db();
+         //Connect
+         $db = $db->connect();
 
+         $stmt = $db->query($sql);
+         $subCategories = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+         foreach($subCategories as $subCategory) {
+            $clientDetailSubCategoryModel = new ClientDetailSubCategoryModel();
+            $clientDetailSubCategoryModel->setSub_category_id($subCategory->sc_id);
+            $clientDetailSubCategoryModel->setSub_category_title($subCategory->sc_title);
+            $clientDetailSubCategoryModel->setSub_category_icon_url($subCategory->sc_icon_url);
+             array_push($result, $clientDetailSubCategoryModel);
+         }
+
+         $db = null;
+
+         echo json_encode($result);
+
+        } catch (PDOException $e) {
+        echo '{"error": '.$err->getMessage().'}';
+    }
+});
+/* ----------------------------------------------------------------------------------------------------------------- */
+
+/* ----------------------------------------------------------------------------------------------------------------- */
+//Add SubCategory
+$app->post('/api/subcategories/add', function(Request $request, Response $response) {
+    $sc_title = $request->getParam('sc_title');
+    $sc_icon_url = $request->getParam('sc_icon_url');
+
+    $sql = "INSERT INTO sub_categories (sc_title,
+                                    sc_icon_url)
+                            VALUES (:sc_title,
+                                    :sc_icon_url)";
+    try {
+        //Get DB Object
+        $db = new db();
+        //Connect
+        $db = $db->connect();
+
+        $stmt = $db->prepare($sql);
+
+        $stmt->bindParam(':sc_title', $sc_title);
+        $stmt->bindParam(':sc_icon_url', $sc_icon_url);
+
+        $stmt->execute();
+
+        echo '{"notice": {"text": "Added SuccessFully"}';
+    } catch(PDOException $e){
+        echo '{"error": '.$err->getMessage().'}';
+    }
+});
+/* ----------------------------------------------------------------------------------------------------------------- */
+
+/* ----------------------------------------------------------------------------------------------------------------- */
+//Update SubCategory
+$app->put('/api/subcategories/update/{sc_id}', function(Request $request, Response $response) {
+    $id = $request->getAttribute('sc_id');
+    $sc_title = $request->getParam('sc_title');
+    $sc_icon_url = $request->getParam('sc_icon_url');
+
+    $sql = "UPDATE sub_categories
+            SET sc_title = :sc_title,
+                sc_icon_url = :sc_icon_url
+            WHERE categories_id = $id";
+    try {
+        //Get DB Object
+        $db = new db();
+        //Connect
+        $db = $db->connect();
+
+        $stmt = $db->prepare($sql);
+
+        $stmt->bindParam(':sc_title', $sc_title);
+        $stmt->bindParam(':sc_icon_url', $sc_icon_url);
+
+        $stmt->execute();
+
+        echo '{"notice": {"text": "SuccessFully Updated"}';
+    } catch(PDOException $e){
+        echo '{"error": '.$err->getMessage().'}';
+    }
+});
+/* ----------------------------------------------------------------------------------------------------------------- */
+
+/* ----------------------------------------------------------------------------------------------------------------- */
+//Delete SubCategory
+$app->delete('/api/subcategories/delete/{sc_id}', function(Request $request, Response $response) {
+    $id = $request->getAttribute('sc_id');
+
+    $sql = "DELETE FROM sub_categories WHERE sc_id = $id";
+
+    try {
+        // Get DB Object
+        $db = new db();
+        // Connect
+        $db = $db->connect();
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute();
+        $db = null;
+        echo '{"notice": {"text": "SuccessFully Deleted"}';
+    } catch(PDOException $e){
+        echo '{"error": '.$err->getMessage().'}';
+    }
+});
+/* ----------------------------------------------------------------------------------------------------------------- */
+
+/* ----------------------------------------------------------------------------------------------------------------- */
+//Get SubCategories using categories_id
+$app->get('/api/subcategories/{categories_id}',function(Request $request, Response $response) {
+    $id = $request->getAttribute('categories_id');
+    $result = array();
+    $sql = "SELECT sub_categories.sc_id,
+                   sub_categories.sc_title,
+                   sub_categories.sc_icon_url,
+                   categories.categories_id 
+            FROM categories
+            JOIN sub_categories ON categories.categories_id = sub_categories.categories_id
+            where categories.categories_id = $id";
+    try {
+        //Get DB
+        $db = new db();
+        //connect
+        $db = $db->connect();
+
+        $stmt = $db->query($sql);
+        $subCategories = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+        foreach($subCategories as $subCategory) {
+            $subCategoriesModel = new SubCategoriesModel();
+            $subCategoriesModel->setSub_categories_id($subCategory->sc_id);
+            $subCategoriesModel->setCategory_id($subCategory->categories_id);
+            $subCategoriesModel->setSub_categories_title($subCategory->sc_title);
+            $subCategoriesModel->setSub_categories_icon_url($subCategory->sc_icon_url);
+
+            array_push($result, $subCategoriesModel);
+        }
+
+        $db = null;
+
+         echo json_encode($result);
+    } catch (PDOException $e) {
+        echo '{"error": '.$err->getMessage().'}';
+    }
+});
+/* ----------------------------------------------------------------------------------------------------------------- */
+
+/* ----------------------------------------------------------------------------------------------------------------- */
 // Detailed Job Description
 $app->get('/api/jobdescriptions/lancer/detailed/{jd_id}', function(Request $request, Response $response) {
     $jd_id = $request->getAttribute('jd_id');
@@ -201,7 +445,9 @@ $app->get('/api/jobdescriptions/lancer/detailed/{jd_id}', function(Request $requ
         echo '{"error": '.$err->getMessage().'}';
     }
 });
+/* ----------------------------------------------------------------------------------------------------------------- */
 
+/* ----------------------------------------------------------------------------------------------------------------- */
 // Get One Job Description with complete detail
 $app->get('/api/jobdescriptions/{jd_id}', function(Request $request, Response $response) {
     $jd_id = $request->getAttribute('jd_id');
@@ -333,7 +579,9 @@ $app->get('/api/jobdescriptions/{jd_id}', function(Request $request, Response $r
         echo '{"error": '.$err->getMessage().'}';
     }
 });
+/* ----------------------------------------------------------------------------------------------------------------- */
 
+/* ----------------------------------------------------------------------------------------------------------------- */
 // Job Description Pagination
 $app->get('/api/jobdescriptions/lancer/page/{page_no}', function(Request $request, Response $response) {
     $page_no = $request->getAttribute('page_no');
@@ -394,6 +642,7 @@ $app->get('/api/jobdescriptions/lancer/page/{page_no}', function(Request $reques
             $quotesCount = $stmtQuotes->fetch(PDO::FETCH_OBJ);         
             $jdModel->setJd_quotes($quotesCount->COUNT);
 
+            //Client Details
             $jdModel->setJd_client($jdp->c_id);
             if($jdp->c_id){
                 $clientModel = new ClientLancerModel();
@@ -440,7 +689,7 @@ $app->get('/api/jobdescriptions/lancer/page/{page_no}', function(Request $reques
             
             array_push($list,$jdModel);
         }
-        $PageModel->setJob_list($list);
+        $PageModel->setList($list);
         $db = null;
 
         echo json_encode($PageModel);
@@ -449,7 +698,9 @@ $app->get('/api/jobdescriptions/lancer/page/{page_no}', function(Request $reques
         echo '{"error": '.$err->getMessage().'}';
     }
 });
+/* ----------------------------------------------------------------------------------------------------------------- */
 
+/* ----------------------------------------------------------------------------------------------------------------- */
 // User Registration
 $app->post('/api/userregistration/add', function(Request $request, Response $response) {
     $ur_firebase_id = $request->getParam('ur_firebase_id');
@@ -501,7 +752,9 @@ $app->post('/api/userregistration/add', function(Request $request, Response $res
         echo '{"error": '.$err->getMessage().'}';
     }
 });
+/* ----------------------------------------------------------------------------------------------------------------- */
 
+/* ----------------------------------------------------------------------------------------------------------------- */
 // Update User
 $app->put('/api/userregistration/update/{ur_id}', function(Request $request, Response $response) {
     $id = $request->getAttribute('ur_id');
@@ -548,7 +801,9 @@ $app->put('/api/userregistration/update/{ur_id}', function(Request $request, Res
         echo '{"error": '.$err->getMessage().'}';
     }
 });
+/* ----------------------------------------------------------------------------------------------------------------- */
 
+/* ----------------------------------------------------------------------------------------------------------------- */
 //Delete User
 $app->delete('/api/userregistration/delete/{ur_id}', function(Request $request, Response $response) {
     $id = $request->getAttribute('ur_id');
@@ -568,36 +823,233 @@ $app->delete('/api/userregistration/delete/{ur_id}', function(Request $request, 
     } catch(PDOException $e){
         echo '{"error": '.$err->getMessage().'}';
     }
-});
+}); 
+/* ----------------------------------------------------------------------------------------------------------------- */
 
+/* ----------------------------------------------------------------------------------------------------------------- */
+// Lancer search pagination
+$app->get('/api/client/lancersearch/page/{page_no}', function(Request $request, Response $response) {
+    $page_no = $request->getAttribute('page_no');
+    $pageModel = new PageLancerModel();
+    $list = array();
+    $n = ($page_no-1)*10;
 
-/*
-//Lancer Category/Sub-category search data
-$app->get('/api/jobdescriptions/lancer/search/{pageno}/{categories_id}', function(Request $request, Response $response) {
-$page_no = $request->getAttribute('page_no');
-$categories_id = $getAttribute('categories_id');
-$PageModel = new PageLancerModel();
+    $sqlCount = "SELECT count(free_lancers.f_id) AS COUNT
+                 FROM free_lancers" ;
+    
+    $sql = "SELECT free_lancers.f_id,
+                   user_registrations.ur_first_name,
+                   user_registrations.ur_last_name,
+                   user_registrations.ur_image_url,
+                   user_registrations.ur_description,
+                   address.country
+            FROM free_lancers
+            JOIN user_registrations ON free_lancers.ur_id = free_lancers.ur_id
+            JOIN address ON user_registrations.address_id = address.address_id
+            LIMIT $n,10";
+    try {
+        //Get DB object
+        $db = new db();
+        //connect
+        $db = $db->connect();
 
-$list = array();
-$n = ($page_no-1)*10;
+        $stmtCount = $db->query($sqlCount);
+        $count = $stmtCount->fetch(PDO::FETCH_OBJ);
 
-$sqlCount = "SELECT count(jd_id) as Count FROM job_descriptions";
+        $pageModel->setPage($page_no);
+        $pageModel->setCount($page_no*10);
+        $pageModel->setTotal_count($count->COUNT);
 
-try {
+        $stmt = $db->query($sql);
+        $lancers = $stmt->fetchAll(PDO::FETCH_OBJ);
 
-    //Get DB Object
-    $db = new db();
-    // Connect
-    $db = $db->connect();
+        foreach ($lancers as $lancer) {
+            $clientLancerSearchModel = new ClientLancerSearchModel();
+            $clientLancerSearchModel->setId($lancer->f_id);
+            $clientLancerSearchModel->setFirst_name($lancer->ur_first_name);
+            $clientLancerSearchModel->setLast_name($lancer->ur_last_name);
+            $clientLancerSearchModel->setImage_url($lancer->ur_image_url);
+            $clientLancerSearchModel->setCountry($lancer->country);
 
-    $stmtcount = $db->query($sqlCount);
-    $count = $stmtcount->fetch(PDO::FETCH_OBJ);
-    $PageModel->setPage($page_no);
-    $PageModel->setCount($page_no*10); 
-    $PageModel->setTotal_count($count->Count);
+            $sqlEarned = "SELECT sum(earned.earn) as EARN
+                          FROM earned
+                          JOIN free_lancers ON earned.f_id = free_lancers.f_id
+                          WHERE earned.f_id = $lancer->f_id";
+            $stmtEarned = $db->query($sqlEarned);
+            $earn = $stmtEarned->fetch(PDO::FETCH_OBJ);
+            $clientLancerSearchModel->setEarn($earn->EARN);
+            
+            //$clientLancerSearchModel->setFeedback();
+            $clientLancerSearchModel->setDescription($lancer->ur_description);
 
-} catch (PDOException $err) {
-    echo '{"error": '.$err->getMessage().'}';
+            array_push($list, $clientLancerSearchModel);
+        }
+
+        $pageModel->setList($list);
+
+        $db = null;
+
+        echo json_encode($pageModel);
+
+    } catch(PDOException $err) {
+        echo '{"error": '.$err->getMessage().'}';
     }
 });
-*/
+/* ----------------------------------------------------------------------------------------------------------------- */
+
+/* ----------------------------------------------------------------------------------------------------------------- */
+//Add JobType
+$app->post('/api/jobtype/add', function (Request $request, Response $response) {
+    $jt_title = $request->getParam('jt_title');
+
+    $sql = "INSERT INTO job_types (jt_title)
+                           VALUES (:jt_title)";
+    try {
+        //Get DB object
+        $db = new db();
+        //Connect
+        $db = $db->connect();
+
+        $stmt = $db->prepare($sql);
+
+        $stmt->bindParam(':jt_title', $jt_title);
+
+        $stmt->execute();
+
+        echo '{"notice": {"text": "User Added"}';
+        } catch(PDOException $e){
+            echo '{"error": '.$err->getMessage().'}';
+        }
+});
+/* ----------------------------------------------------------------------------------------------------------------- */
+
+/* ----------------------------------------------------------------------------------------------------------------- */
+//Update JobType
+$app->put('/api/jobtype/update/{jt_id}', function (Request $request, Response $response) {
+    $id = $request->getAttribute('jt_id');
+    $jt_title = $request->getParam('jt_title');
+
+    $sql = "UPDATE job_types
+            SET jt_title = :jt_title
+            WHERE jt_id = $id";
+    try {
+        //Get DB Object
+        $db = new db();
+        //Connect
+        $db = $db->connect();
+
+        $stmt = $db->prepare($sql);
+
+        $stmt->bindParam(':jt_title', $jt_title);
+
+        $stmt->execute();
+
+        echo '{"notice": {"text": "SuccessFully Updated"}';
+    } catch(PDOException $e){
+        echo '{"error": '.$err->getMessage().'}';
+    }
+});
+/* ----------------------------------------------------------------------------------------------------------------- */
+
+/* ----------------------------------------------------------------------------------------------------------------- */
+// Get Categories And Sub Categories
+$app->get('/api/categories/subcategories', function (Request $request, Response $response) {
+    $result = array();
+    $sql = "SELECT categories.categories_id as id, categories.categories_title as title FROM categories 
+    UNION 
+    SELECT sub_categories.sc_id, sub_categories.sc_title
+    FROM sub_categories";
+
+    try {
+        //Get DB
+        $db = new db();
+        //Connect
+        $db = $db->connect();
+
+        $stmtCategory = $db->query($sql);
+        $categories = $stmtCategory->fetchAll(PDO::FETCH_OBJ);
+
+        foreach($categories as $category) {
+            $csm = new CategorySubCategoryModel();
+            $csm->setId($category->id);
+            $csm->setTitle($category->title);
+
+            array_push($result, $csm);
+        }
+
+        $db = null;
+
+         echo json_encode($result);
+
+    } catch (PDOException $e) {
+        echo '{"error": '.$err->getMessage().'}';
+    }
+});
+/* ----------------------------------------------------------------------------------------------------------------- */
+
+//Search lancers basis on categories and subCategories
+$app->post('/api/lancersearch/{page_no}',function (Request $request, Response $response) {
+   
+    $title = $request->getParam('title');
+    $result = array();
+    $result["error"] = FALSE;
+    $page_no = $request->getAttribute('page_no');
+    $pageModel = new PageLancerModel();
+    $result["result"] = array();
+
+
+    $n = ($page_no-1)*10;
+
+    $sqlCount = "SELECT count(search_lancer.sl_id) AS COUNT
+                 FROM search_lancer";
+
+    $sql = "SELECT user_registrations.ur_first_name, user_registrations.ur_last_name, user_registrations.ur_id ,free_lancers.f_id,
+    user_registrations.ur_phone_no, user_registrations.ur_email, user_registrations.ur_image_url, address.country FROM free_lancers
+    join user_registrations on free_lancers.ur_id = user_registrations.ur_id
+    join address on user_registrations.address_id = address.address_id
+    join search_lancer on free_lancers.f_id = search_lancer.f_id
+    join categories on search_lancer.categories_id = categories.categories_id
+    join sub_categories on search_lancer.sc_id = sub_categories.sc_id
+    where categories.categories_title like '$title%' or sub_categories.sc_title like '$title%'";
+    try {
+        //Get DB
+        $db = new db();
+        //Connect DB
+        $db = $db->connect();
+
+        $stmtCount = $db->query($sqlCount);
+        $count = $stmtCount->fetch(PDO::FETCH_OBJ);
+
+        $pageModel->setPage($page_no);
+        $pageModel->setCount($page_no*10);
+        $pageModel->setTotal_count($count->COUNT);
+
+        $stmt = $db->query($sql);
+        $lancers = $stmt->fetchAll(PDO::FETCH_OBJ);
+        
+        if($lancers!=null){
+                        foreach($lancers as $lancer) {
+                $lsm = new LancerSearchModel();
+                $lsm->setF_id($lancer->f_id);
+                $lsm->setUr_id($lancer->ur_id);
+                $lsm->setFirst_name($lancer->ur_first_name);
+                $lsm->setLast_name($lancer->ur_last_name);
+                $lsm->setPhone_no($lancer->ur_phone_no);
+                $lsm->setEmail_address($lancer->ur_email);
+                $lsm->setImage_url($lancer->ur_image_url);
+                $lsm->setCountry($lancer->country);
+            array_push($result["result"],$lsm);
+            }
+        }else
+        {
+            $result["error"] = TRUE;
+            $result["message"] = "No result found";
+        }
+        $pageModel->setList($result["result"]);
+        $db = null;
+        echo json_encode($pageModel);
+
+    } catch (PDOException $e) {
+        echo '{"error": '.$err->getMessage().'}';
+    }
+});
