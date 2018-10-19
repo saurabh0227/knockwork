@@ -11,7 +11,7 @@ $app->add(function ($req, $res, $next) {
     $response = $next($req, $res);
     return $response
             ->withHeader('Access-Control-Allow-Origin', '*')
-            ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, Accept, Origin, Authorization')
+            ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, form-data, Content-Type, Accept, Origin, Authorization')
             ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
             ->withHeader('content-type','application/json');
 });
@@ -819,7 +819,7 @@ $app->delete('/api/userregistration/delete/{ur_id}', function(Request $request, 
         $stmt = $db->prepare($sql);
         $stmt->execute();
         $db = null;
-        echo '{"notice": {"text": "User Deleted"}';
+        echo '{"text": "User Deleted"}';
     } catch(PDOException $e){
         echo '{"error": '.$err->getMessage().'}';
     }
@@ -916,7 +916,7 @@ $app->post('/api/jobtype/add', function (Request $request, Response $response) {
 
         $stmt->execute();
 
-        echo '{"notice": {"text": "User Added"}';
+        echo '{"text": "User Added"}';
         } catch(PDOException $e){
             echo '{"error": '.$err->getMessage().'}';
         }
@@ -927,7 +927,6 @@ $app->post('/api/jobtype/add', function (Request $request, Response $response) {
 //Update JobType
 $app->put('/api/jobtype/update/{jt_id}', function (Request $request, Response $response) {
     $id = $request->getAttribute('jt_id');
-    $jt_title = $request->getParam('jt_title');
 
     $sql = "UPDATE job_types
             SET jt_title = :jt_title
@@ -944,7 +943,7 @@ $app->put('/api/jobtype/update/{jt_id}', function (Request $request, Response $r
 
         $stmt->execute();
 
-        echo '{"notice": {"text": "SuccessFully Updated"}';
+        echo '{"text": "SuccessFully Updated"}';
     } catch(PDOException $e){
         echo '{"error": '.$err->getMessage().'}';
     }
@@ -952,7 +951,34 @@ $app->put('/api/jobtype/update/{jt_id}', function (Request $request, Response $r
 /* ----------------------------------------------------------------------------------------------------------------- */
 
 /* ----------------------------------------------------------------------------------------------------------------- */
+//Delete Job Type
+$app->delete('/api/jobtype/delete/{jt_id}', function (Request $request, Response $response) {
+    $id = $request->getAttribute('jt_id');
+
+    $sql = "DELETE FROM job_types WHERE jt_id = $id";
+
+    try {
+        //Get DB object
+        $db = new db();
+        // Connect
+        $db = $db->connect();
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute();
+        echo '{"text": "User Deleted"}';
+        $db = null;
+    } catch(PDOException $e){
+        echo '{"error": '.$err->getMessage().'}';
+    }
+});
+/* ----------------------------------------------------------------------------------------------------------------- */
+
+/* ----------------------------------------------------------------------------------------------------------------- */
+<<<<<<< HEAD
 // Get Categories And Sub Categories
+=======
+// Get Suggestion List
+>>>>>>> 6353b7cf971e74e6dc0cb44f674aa5065eeec784
 $app->get('/api/suggestionlist', function (Request $request, Response $response) {
     $result = array();
     $sql = "SELECT categories.categories_id as id, categories.categories_title as title FROM categories 
@@ -987,6 +1013,7 @@ $app->get('/api/suggestionlist', function (Request $request, Response $response)
 });
 /* ----------------------------------------------------------------------------------------------------------------- */
 
+/* ----------------------------------------------------------------------------------------------------------------- */
 //Search lancers basis on categories and subCategories
 $app->post('/api/lancersearch/{page_no}',function (Request $request, Response $response) {
    
@@ -1003,14 +1030,22 @@ $app->post('/api/lancersearch/{page_no}',function (Request $request, Response $r
     $sqlCount = "SELECT count(search_lancer.sl_id) AS COUNT
                  FROM search_lancer";
 
-    $sql = "SELECT user_registrations.ur_first_name, user_registrations.ur_last_name, user_registrations.ur_id ,free_lancers.f_id,
-    user_registrations.ur_phone_no, user_registrations.ur_email, user_registrations.ur_image_url, address.country FROM free_lancers
-    join user_registrations on free_lancers.ur_id = user_registrations.ur_id
-    join address on user_registrations.address_id = address.address_id
-    join search_lancer on free_lancers.f_id = search_lancer.f_id
-    join categories on search_lancer.categories_id = categories.categories_id
-    join sub_categories on search_lancer.sc_id = sub_categories.sc_id
-    where categories.categories_title like '$title%' or sub_categories.sc_title like '$title%'";
+    $sql = "SELECT user_registrations.ur_first_name,
+                   user_registrations.ur_last_name,
+                   user_registrations.ur_id,
+                   free_lancers.f_id,
+                   user_registrations.ur_phone_no,
+                   user_registrations.ur_email,
+                   user_registrations.ur_image_url,
+                   address.country,
+                   user_registrations.ur_description
+            FROM free_lancers
+            JOIN user_registrations ON free_lancers.ur_id = user_registrations.ur_id
+            JOIN address ON user_registrations.address_id = address.address_id
+            JOIN search_lancer ON free_lancers.f_id = search_lancer.f_id
+            JOIN categories ON search_lancer.categories_id = categories.categories_id
+            JOIN sub_categories ON search_lancer.sc_id = sub_categories.sc_id
+            WHERE categories.categories_title LIKE '$title%' OR sub_categories.sc_title LIKE '$title%'";
     try {
         //Get DB
         $db = new db();
@@ -1038,6 +1073,15 @@ $app->post('/api/lancersearch/{page_no}',function (Request $request, Response $r
                 $lsm->setEmail_address($lancer->ur_email);
                 $lsm->setImage_url($lancer->ur_image_url);
                 $lsm->setCountry($lancer->country);
+                $lsm->setDescription($lancer->ur_description);
+
+                $sqlEarned = "SELECT sum(earned.earn) as EARN
+                          FROM earned
+                          JOIN free_lancers ON earned.f_id = free_lancers.f_id
+                          WHERE earned.f_id = $lancer->f_id";
+                $stmtEarned = $db->query($sqlEarned);
+                $earn = $stmtEarned->fetch(PDO::FETCH_OBJ);
+                $lsm->setEarning($earn->EARN);
             array_push($result["result"],$lsm);
             }
         }else
@@ -1053,3 +1097,4 @@ $app->post('/api/lancersearch/{page_no}',function (Request $request, Response $r
         echo '{"error": '.$err->getMessage().'}';
     }
 });
+/* ----------------------------------------------------------------------------------------------------------------- */

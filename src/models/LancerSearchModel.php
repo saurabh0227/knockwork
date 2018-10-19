@@ -8,7 +8,10 @@ class LancerSearchModel {
            $phone_no,
            $email_address,
            $image_url,
-           $country;
+           $country,
+           $description,
+           $earning,
+           $feedback;
 
     /**
      * Get the value of f_id
@@ -166,6 +169,66 @@ class LancerSearchModel {
            public function setCountry($country)
            {
                       $this->country = $country;
+
+                      return $this;
+           }
+
+           /**
+            * Get the value of description
+            */ 
+           public function getDescription()
+           {
+                      return $this->description;
+           }
+
+           /**
+            * Set the value of description
+            *
+            * @return  self
+            */ 
+           public function setDescription($description)
+           {
+                      $this->description = $description;
+
+                      return $this;
+           }
+
+           /**
+            * Get the value of earning
+            */ 
+           public function getEarning()
+           {
+                      return $this->earning;
+           }
+
+           /**
+            * Set the value of earning
+            *
+            * @return  self
+            */ 
+           public function setEarning($earning)
+           {
+                      $this->earning = $earning;
+
+                      return $this;
+           }
+
+           /**
+            * Get the value of feedback
+            */ 
+           public function getFeedback()
+           {
+                      return $this->feedback;
+           }
+
+           /**
+            * Set the value of feedback
+            *
+            * @return  self
+            */ 
+           public function setFeedback($feedback)
+           {
+                      $this->feedback = $feedback;
 
                       return $this;
            }
