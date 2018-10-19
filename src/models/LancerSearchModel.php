@@ -10,8 +10,9 @@ class LancerSearchModel {
            $image_url,
            $country,
            $description,
-           $earning,
-           $feedback;
+           $earning
+           //$feedback
+		   ;
 
     /**
      * Get the value of f_id
