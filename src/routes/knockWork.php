@@ -974,7 +974,11 @@ $app->delete('/api/jobtype/delete/{jt_id}', function (Request $request, Response
 /* ----------------------------------------------------------------------------------------------------------------- */
 
 /* ----------------------------------------------------------------------------------------------------------------- */
+<<<<<<< HEAD
+// Get Categories And Sub Categories
+=======
 // Get Suggestion List
+>>>>>>> 6353b7cf971e74e6dc0cb44f674aa5065eeec784
 $app->get('/api/suggestionlist', function (Request $request, Response $response) {
     $result = array();
     $sql = "SELECT categories.categories_id as id, categories.categories_title as title FROM categories 

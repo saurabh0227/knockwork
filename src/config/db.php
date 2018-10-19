@@ -2,7 +2,7 @@
     class db {
         private $dbhost = 'localhost';
         private $dbuser ='root';
-        private $dbpass ='123456';
+        private $dbpass ='root';
         private $dbname = 'knockwork';
 
        //connect
