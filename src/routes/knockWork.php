@@ -953,7 +953,7 @@ $app->put('/api/jobtype/update/{jt_id}', function (Request $request, Response $r
 
 /* ----------------------------------------------------------------------------------------------------------------- */
 // Get Categories And Sub Categories
-$app->get('/api/categories/subcategories', function (Request $request, Response $response) {
+$app->get('/api/suggestionlist', function (Request $request, Response $response) {
     $result = array();
     $sql = "SELECT categories.categories_id as id, categories.categories_title as title FROM categories 
     UNION 
@@ -971,7 +971,7 @@ $app->get('/api/categories/subcategories', function (Request $request, Response 
 
         foreach($categories as $category) {
             $csm = new CategorySubCategoryModel();
-            $csm->setId($category->id);
+            //$csm->setId($category->id);
             $csm->setTitle($category->title);
 
             array_push($result, $csm);
