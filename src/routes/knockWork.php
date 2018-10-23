@@ -10,10 +10,10 @@ $app->options('/{routes:.+}', function ($request, $response, $args) {
 $app->add(function ($req, $res, $next) {
     $response = $next($req, $res);
     return $response
-            ->withHeader('Access-Control-Allow-Origin', '*')
-            ->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, form-data, Content-Type, Accept, Origin, Authorization')
-            ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-            ->withHeader('content-type','application/json');
+            //->withHeader('Access-Control-Allow-Origin', '*')
+            //->withHeader('Access-Control-Allow-Headers', 'X-Requested-With, form-data, Content-Type, Accept, Origin, Authorization')
+            //->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+            ->withHeader('content-type','application/json charset=utf-8');
 });
 
 /* ----------------------------------------------------------------------------------------------------------------- */
@@ -828,21 +828,26 @@ $app->delete('/api/userregistration/delete/{ur_id}', function(Request $request, 
 
 /* ----------------------------------------------------------------------------------------------------------------- */
 // Lancer search pagination
-$app->get('/api/client/lancersearch/page/{page_no}', function(Request $request, Response $response) {
+$app->get('/api/lancers/{page_no}', function(Request $request, Response $response) {
     $page_no = $request->getAttribute('page_no');
     $pageModel = new PageLancerModel();
-    $list = array();
+   
+    $result= array();
     $n = ($page_no-1)*10;
 
     $sqlCount = "SELECT count(free_lancers.f_id) AS COUNT
                  FROM free_lancers" ;
+				 
     
     $sql = "SELECT free_lancers.f_id,
+                  free_lancers.ur_id,
                    user_registrations.ur_first_name,
                    user_registrations.ur_last_name,
                    user_registrations.ur_image_url,
                    user_registrations.ur_description,
-                   address.country
+                   address.country,
+                   user_registrations.ur_phone_no,
+                   user_registrations.ur_email
             FROM free_lancers
             JOIN user_registrations ON free_lancers.ur_id = free_lancers.ur_id
             JOIN address ON user_registrations.address_id = address.address_id
@@ -859,17 +864,33 @@ $app->get('/api/client/lancersearch/page/{page_no}', function(Request $request, 
         $pageModel->setPage($page_no);
         $pageModel->setCount($page_no*10);
         $pageModel->setTotal_count($count->COUNT);
+		
 
         $stmt = $db->query($sql);
         $lancers = $stmt->fetchAll(PDO::FETCH_OBJ);
-
+		
+		$result["error"] = FALSE;
+		$result["page_no"] = $page_no;
+		$result["TotalCount"] = $count->COUNT;
+		$result["result"]= array();
+		
         foreach ($lancers as $lancer) {
-            $clientLancerSearchModel = new ClientLancerSearchModel();
+           /* $clientLancerSearchModel = new ClientLancerSearchModel();
             $clientLancerSearchModel->setId($lancer->f_id);
             $clientLancerSearchModel->setFirst_name($lancer->ur_first_name);
             $clientLancerSearchModel->setLast_name($lancer->ur_last_name);
             $clientLancerSearchModel->setImage_url($lancer->ur_image_url);
-            $clientLancerSearchModel->setCountry($lancer->country);
+            $clientLancerSearchModel->setCountry($lancer->country);*/
+			
+			$LancerSearchModel = new LancerSearchModel();
+            $LancerSearchModel->setF_id($lancer->f_id);
+            $LancerSearchModel->setUr_id($lancer->ur_id);
+            $LancerSearchModel->setFirst_name($lancer->ur_first_name);
+            $LancerSearchModel->setLast_name($lancer->ur_last_name);
+            $LancerSearchModel->setImage_url($lancer->ur_image_url);
+            $LancerSearchModel->setCountry($lancer->country);
+            $LancerSearchModel->setPhone_no($lancer->ur_phone_no);
+            $LancerSearchModel->setEmail_address($lancer->ur_email);
 
             $sqlEarned = "SELECT sum(earned.earn) as EARN
                           FROM earned
@@ -877,19 +898,19 @@ $app->get('/api/client/lancersearch/page/{page_no}', function(Request $request, 
                           WHERE earned.f_id = $lancer->f_id";
             $stmtEarned = $db->query($sqlEarned);
             $earn = $stmtEarned->fetch(PDO::FETCH_OBJ);
-            $clientLancerSearchModel->setEarn($earn->EARN);
+            //$clientLancerSearchModel->setEarn($earn->EARN);
+            $LancerSearchModel->setEarning("2500");
             
-            //$clientLancerSearchModel->setFeedback();
-            $clientLancerSearchModel->setDescription($lancer->ur_description);
+            $LancerSearchModel->setFeedback("60");
+            $LancerSearchModel->setDescription($lancer->ur_description);
 
-            array_push($list, $clientLancerSearchModel);
+            array_push($result["result"], $LancerSearchModel);
         }
 
-        $pageModel->setList($list);
+        //$pageModel->setList($list);
 
         $db = null;
-
-        echo json_encode($pageModel);
+        echo json_encode($result);
 
     } catch(PDOException $err) {
         echo '{"error": '.$err->getMessage().'}';
@@ -1015,14 +1036,14 @@ $app->get('/api/suggestionlist', function (Request $request, Response $response)
 
 /* ----------------------------------------------------------------------------------------------------------------- */
 //Search lancers basis on categories and subCategories
-$app->post('/api/lancersearch/{page_no}',function (Request $request, Response $response) {
+$app->post('/api/lancersearch',function (Request $request, Response $response) {
     //$arr = array();
     $title = $request->getParam('title');
     $result = array();
     $result["error"] = FALSE;
-    $page_no = $request->getAttribute('page_no');
+    $page_no = $request->getParam('pageno');
     $pageModel = new PageLancerModel();
-    $result["result"] = array();
+    
 
 
     $n = ($page_no-1)*10;
@@ -1045,13 +1066,15 @@ $app->post('/api/lancersearch/{page_no}',function (Request $request, Response $r
             JOIN search_lancer ON free_lancers.f_id = search_lancer.f_id
             JOIN categories ON search_lancer.categories_id = categories.categories_id
             JOIN sub_categories ON search_lancer.sc_id = sub_categories.sc_id
-            WHERE categories.categories_title LIKE '$title%' OR sub_categories.sc_title LIKE '$title%'
-            LIMIT $n,10";
+            WHERE categories.categories_title LIKE '$title%' OR sub_categories.sc_title LIKE '$title%'";
+			//LIMIT $n,10";
+			
     try {
         //Get DB
         $db = new db();
         //Connect DB
         $db = $db->connect();
+		
 
         $stmtCount = $db->query($sqlCount);
         $count = $stmtCount->fetch(PDO::FETCH_OBJ);
@@ -1059,12 +1082,16 @@ $app->post('/api/lancersearch/{page_no}',function (Request $request, Response $r
         $pageModel->setPage($page_no);
         $pageModel->setCount($page_no*10);
         $pageModel->setTotal_count($count->COUNT);
+		
+		$result["page_no"] = $page_no;
+		$result["TotalCount"] = $count->COUNT;
         
 
         $stmt = $db->query($sql);
         $lancers = $stmt->fetchAll(PDO::FETCH_OBJ);
         
         if($lancers!=null){
+			$result["result"] = array();
             foreach($lancers as $lancer) {
                 $lsm = new LancerSearchModel();
                 $lsm->setF_id($lancer->f_id);
@@ -1083,7 +1110,8 @@ $app->post('/api/lancersearch/{page_no}',function (Request $request, Response $r
                           WHERE earned.f_id = $lancer->f_id";
                 $stmtEarned = $db->query($sqlEarned);
                 $earn = $stmtEarned->fetch(PDO::FETCH_OBJ);
-                $lsm->setEarning($earn->EARN);
+               // $lsm->setEarning($earn->EARN);
+                $lsm->setEarning("200");
 
             array_push($result["result"], $lsm);
             }
@@ -1092,14 +1120,14 @@ $app->post('/api/lancersearch/{page_no}',function (Request $request, Response $r
             $result["error"] = TRUE;
             $result["message"] = "No result found";
         }
-        $pageModel->setList($result["result"]);
+        $pageModel->setList($result["result"]); 
         $db = null;
-        $data=new DataModel();
-        $data->SetData($pageModel);
-        echo json_encode($data);
+        //$data=new DataModel();
+        //$data->SetData($pageModel);
+        echo json_encode($result);
         //echo json_encode($arr);
 
-    } catch (PDOException $e) {
+    } catch (PDOException $err) {
         echo '{"error": '.$err->getMessage().'}';
     }
 });
